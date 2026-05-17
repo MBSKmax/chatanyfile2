@@ -1,7 +1,13 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  serverExternalPackages: [
+    'pdf-parse',
+    'mammoth', 
+    'xlsx',
+    'jszip'
+  ],
+  allowedDevOrigins: ['172.22.0.1'],
+}
 
-export default nextConfig;
+export default nextConfig

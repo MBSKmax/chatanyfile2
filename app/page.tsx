@@ -1,65 +1,237 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
+
+type Message = { role: 'user' | 'assistant'; content: string }
+type ChatHistory = { id: string; fileName: string; messages: Message[]; fileContent: string }
 
 export default function Home() {
+  const [fileContent, setFileContent] = useState('')
+  const [fileName, setFileName] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+  const [history, setHistory] = useState<ChatHistory[]>([])
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const handleFile = async (selectedFile: File) => {
+    if (!selectedFile) return
+    setUploading(true)
+    setMessages([])
+    setFileContent('')
+    setFileName(selectedFile.name)
+
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+
+      if (data.content) {
+        const id = Date.now().toString()
+        const welcome: Message = {
+          role: 'assistant',
+          content: `✅ "${selectedFile.name}" ready! Ask me anything about this file.`
+        }
+        setFileContent(data.content)
+        setMessages([welcome])
+        setActiveId(id)
+        setHistory(prev => [{
+          id,
+          fileName: selectedFile.name,
+          messages: [welcome],
+          fileContent: data.content
+        }, ...prev])
+      } else {
+        setMessages([{ role: 'assistant', content: `❌ Error: ${data.error}` }])
+      }
+    } catch {
+      setMessages([{ role: 'assistant', content: '❌ Upload failed. Try again.' }])
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+    const f = e.dataTransfer.files[0]
+    if (f) handleFile(f)
+  }
+
+  const handleSend = async () => {
+    if (!input.trim() || !fileContent || loading) return
+    const userMsg: Message = { role: 'user', content: input }
+    const updated = [...messages, userMsg]
+    setMessages(updated)
+    setInput('')
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input, fileContent, history: messages })
+      })
+      const data = await res.json()
+      const aiMsg: Message = { role: 'assistant', content: data.reply || data.error }
+      const final = [...updated, aiMsg]
+      setMessages(final)
+      setHistory(prev => prev.map(h =>
+        h.id === activeId ? { ...h, messages: final } : h
+      ))
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Error. Try again.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadChat = (chat: ChatHistory) => {
+    setActiveId(chat.id)
+    setFileName(chat.fileName)
+    setFileContent(chat.fileContent)
+    setMessages(chat.messages)
+  }
+
+  const newChat = () => {
+    setFileContent('')
+    setFileName('')
+    setMessages([])
+    setActiveId(null)
+    setInput('')
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div style={{ display: 'flex', height: '100vh', background: '#0d0d14', color: '#f0f0f5', fontFamily: 'sans-serif' }}>
+
+      {/* Sidebar */}
+      <div style={{ width: 240, background: '#111118', borderRight: '1px solid #1e1e2e', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '16px', borderBottom: '1px solid #1e1e2e', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>💬</div>
+          <span style={{ fontWeight: 600, fontSize: 14 }}>Chat<span style={{ color: '#6366f1' }}>AnyFile</span></span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <button
+          onClick={newChat}
+          style={{ margin: 12, padding: '8px 12px', background: '#1e1e2e', border: '1px solid #2a2a3e', borderRadius: 10, color: '#a0a0c0', fontSize: 13, cursor: 'pointer', textAlign: 'left' }}
+        >
+          + New Chat
+        </button>
+
+        <div style={{ padding: '4px 16px 4px', fontSize: 11, color: '#4a4a6a', letterSpacing: 1 }}>RECENT</div>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {history.map(h => (
+            <div
+              key={h.id}
+              onClick={() => loadChat(h)}
+              style={{ margin: '2px 8px', padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: activeId === h.id ? '#1e1e2e' : 'transparent', fontSize: 13, color: activeId === h.id ? '#c0c0d8' : '#6b6b90', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              📄 {h.fileName}
+            </div>
+          ))}
         </div>
-      </main>
+      </div>
+
+      {/* Main */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
+        {/* Top Bar */}
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid #1e1e2e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, color: '#6b6b90' }}>
+            {fileName ? `📄 ${fileName}` : 'No file selected'}
+          </span>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{ padding: '7px 16px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, cursor: 'pointer' }}
+          >
+            + Upload File
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.md"
+            style={{ display: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+          />
+        </div>
+
+        {/* Chat or Upload */}
+        {!fileContent ? (
+          <div
+            onDrop={handleDrop}
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px dashed ${dragOver ? '#6366f1' : '#2a2a3e'}`, margin: 24, borderRadius: 16, transition: 'all 0.2s' }}
+          >
+            {uploading ? (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>⚙️</div>
+                <p style={{ color: '#6366f1' }}>Processing...</p>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📂</div>
+                <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Drop your file here</p>
+                <p style={{ color: '#6b6b80', marginBottom: 16 }}>or click to browse</p>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {['PDF','DOC','DOCX','PPT','PPTX','XLS','XLSX','TXT'].map(e => (
+                    <span key={e} style={{ background: '#1e1e2e', padding: '4px 10px', borderRadius: 8, fontSize: 12, color: '#8888aa' }}>{e}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {messages.map((msg, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                  <div style={{ maxWidth: '75%', padding: '11px 16px', borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: msg.role === 'user' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : '#1e1e2e', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div style={{ display: 'flex' }}>
+                  <div style={{ padding: '11px 16px', background: '#1e1e2e', borderRadius: '16px 16px 16px 4px', color: '#6366f1' }}>⏳ Thinking...</div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #1e1e2e', display: 'flex', gap: 10 }}>
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+                placeholder="Ask anything about your file..."
+                style={{ flex: 1, padding: '12px 16px', background: '#1a1a28', border: '1px solid #2a2a3e', borderRadius: 12, color: '#f0f0f5', fontSize: 14, outline: 'none' }}
+              />
+              <button
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                style={{ padding: '12px 20px', background: loading ? '#2a2a3e' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 18, cursor: loading ? 'not-allowed' : 'pointer' }}
+              >➤</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
-  );
+  )
 }
