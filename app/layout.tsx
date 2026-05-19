@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'ChatAnyFile — Chat with Any File',
-  description: 'Chat with PDF, Word, PowerPoint, Excel, JSON, HTML and more using AI',
+  description: 'Chat with PDF, Word, PowerPoint, Excel and more using AI',
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>"
   }
