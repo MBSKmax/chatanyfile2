@@ -54,12 +54,17 @@ export async function POST(req: NextRequest) {
       }
       content = texts.join('\n\n')
 
-    } else if (
-      fileName.endsWith('.txt') ||
-      fileName.endsWith('.csv') ||
-      fileName.endsWith('.md')
-    ) {
-      content = buffer.toString('utf-8')
+   } else if (
+  fileName.endsWith('.txt') ||
+  fileName.endsWith('.csv') ||
+  fileName.endsWith('.md') ||
+  fileName.endsWith('.json') ||
+  fileName.endsWith('.xml') ||
+  fileName.endsWith('.html') ||
+  fileName.endsWith('.htm') ||
+  fileName.endsWith('.rtf')
+) {
+  content = buffer.toString('utf-8')
 
     } else {
       return NextResponse.json({ error: 'File type not supported' }, { status: 400 })
