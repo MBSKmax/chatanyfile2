@@ -1,5 +1,5 @@
 'use client'
-
+import ReactMarkdown from 'react-markdown'
 import { useState, useRef, useEffect } from 'react'
 
 type Message = { role: 'user' | 'assistant'; content: string }
@@ -10,20 +10,17 @@ const themes = {
   dark: {
     bg: '#0d0d14', sidebar: '#111118', border: '#1e1e2e',
     input: '#1a1a28', bubble: '#1e1e2e', text: '#f0f0f5',
-    muted: '#6b6b90', accent: '#6366f1', accent2: '#8b5cf6',
-    topbar: '#0d0d14'
+    muted: '#6b6b90', accent: '#6366f1', accent2: '#8b5cf6', topbar: '#0d0d14'
   },
   light: {
     bg: '#f5f5f7', sidebar: '#ffffff', border: '#e0e0e8',
     input: '#ffffff', bubble: '#ffffff', text: '#1a1a2e',
-    muted: '#8888aa', accent: '#6366f1', accent2: '#8b5cf6',
-    topbar: '#ffffff'
+    muted: '#8888aa', accent: '#6366f1', accent2: '#8b5cf6', topbar: '#ffffff'
   },
   purple: {
     bg: '#0f0a1e', sidebar: '#150d2e', border: '#2a1a4e',
     input: '#1a0f35', bubble: '#1e1040', text: '#f0eeff',
-    muted: '#8070b0', accent: '#a855f7', accent2: '#7c3aed',
-    topbar: '#0f0a1e'
+    muted: '#8070b0', accent: '#a855f7', accent2: '#7c3aed', topbar: '#0f0a1e'
   }
 }
 
@@ -61,7 +58,7 @@ export default function Home() {
       const data = await res.json()
       if (data.content) {
         const id = Date.now().toString()
-        const welcome: Message = { role: 'assistant', content: `✅ "${selectedFile.name}" ready! Ask me anything about this file.` }
+        const welcome: Message = { role: 'assistant', content: `✅ **"${selectedFile.name}"** ready! Ask me anything about this file.` }
         setFileContent(data.content)
         setMessages([welcome])
         setActiveId(id)
@@ -77,7 +74,7 @@ export default function Home() {
   }
 
   const handleSend = async () => {
-    if (!input.trim() || !fileContent || loading) return
+    if (!input.trim() || loading) return
     setSendGlow(true)
     setTimeout(() => setSendGlow(false), 600)
     const userMsg: Message = { role: 'user', content: input }
@@ -134,10 +131,10 @@ export default function Home() {
         }
         @keyframes typingBounce {
           0%, 60%, 100% { transform: translateY(0); }
-          30%            { transform: translateY(-6px); }
+          30% { transform: translateY(-6px); }
         }
         .msg-animate { animation: fadeSlideUp 0.3s ease forwards; }
-        .send-glow   { animation: glowPulse 0.6s ease; }
+        .send-glow { animation: glowPulse 0.6s ease; }
         .dot1 { animation: typingBounce 1.2s infinite 0.0s; }
         .dot2 { animation: typingBounce 1.2s infinite 0.2s; }
         .dot3 { animation: typingBounce 1.2s infinite 0.4s; }
@@ -145,11 +142,20 @@ export default function Home() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 4px; }
         input:focus { outline: none !important; border-color: ${t.accent} !important; box-shadow: 0 0 0 2px ${t.accent}33 !important; }
+        .ai-bubble p { margin: 0 0 8px; line-height: 1.7; }
+        .ai-bubble p:last-child { margin-bottom: 0; }
+        .ai-bubble ul, .ai-bubble ol { margin: 8px 0; padding-left: 20px; }
+        .ai-bubble li { margin: 4px 0; }
+        .ai-bubble strong { font-weight: 600; }
+        .ai-bubble code { background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: monospace; }
+        .ai-bubble pre { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 13px; margin: 8px 0; }
+        .ai-bubble h1 { font-size: 18px; font-weight: 600; margin: 12px 0 6px; }
+        .ai-bubble h2 { font-size: 16px; font-weight: 600; margin: 10px 0 6px; }
+        .ai-bubble h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
       `}</style>
 
       <div style={{ display: 'flex', height: '100dvh', background: t.bg, color: t.text, fontFamily: 'sans-serif', position: 'relative', overflow: 'hidden', transition: 'background 0.3s' }}>
 
-        {/* Overlay */}
         {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 20 }} />}
 
         {/* Sidebar */}
@@ -164,7 +170,6 @@ export default function Home() {
 
           <button onClick={newChat} style={{ margin: 12, padding: '8px 12px', background: 'transparent', border: `1px solid ${t.border}`, borderRadius: 10, color: t.muted, fontSize: 13, cursor: 'pointer', textAlign: 'left' }}>+ New Chat</button>
 
-          {/* Theme Switcher */}
           <div style={{ padding: '8px 12px', borderBottom: `1px solid ${t.border}` }}>
             <p style={{ fontSize: 11, color: t.muted, marginBottom: 8, letterSpacing: 1 }}>THEME</p>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -196,14 +201,14 @@ export default function Home() {
             <span style={{ flex: 1, fontSize: 13, color: t.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {fileName ? `📄 ${fileName}` : '💬 ChatAnyFile'}
             </span>
-            <button onClick={() => fileInputRef.current?.click()} style={{ padding: '7px 14px', background: `linear-gradient(135deg,${t.accent},${t.accent2})`, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'opacity 0.2s' }}>
+            <button onClick={() => fileInputRef.current?.click()} style={{ padding: '7px 14px', background: `linear-gradient(135deg,${t.accent},${t.accent2})`, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               + Upload
             </button>
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.md,.json,.xml,.html,.htm,.rtf,.log,.yaml,.yml" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
           </div>
 
-          {/* Upload Area */}
-          {!fileContent && (
+          {/* Upload Area — sirf jab koi file nahi aur koi message nahi */}
+          {!fileContent && messages.length === 0 && (
             <div onClick={() => fileInputRef.current?.click()} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 24, textAlign: 'center' }}>
               {uploading ? (
                 <div>
@@ -211,7 +216,7 @@ export default function Home() {
                   <p style={{ color: t.accent, fontSize: 16 }}>Processing your file...</p>
                 </div>
               ) : (
-                <div style={{ border: `2px dashed ${t.border}`, borderRadius: 20, padding: '48px 32px', width: '100%', maxWidth: 420, transition: 'border-color 0.2s' }}>
+                <div style={{ border: `2px dashed ${t.border}`, borderRadius: 20, padding: '48px 32px', width: '100%', maxWidth: 420 }}>
                   <div style={{ fontSize: 52, marginBottom: 14 }}>📂</div>
                   <p style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Drop or tap to upload</p>
                   <p style={{ color: t.muted, marginBottom: 18, fontSize: 14 }}>PDF • Word • PPT • Excel • JSON • HTML • Text</p>
@@ -226,16 +231,23 @@ export default function Home() {
           )}
 
           {/* Chat Area */}
-          {fileContent && (
+          {(fileContent || messages.length > 0) && (
             <>
               <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {messages.map((msg, i) => (
-                  <div key={i} className="msg-animate" style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                  <div key={i} className="msg-animate" style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-start' }}>
                     {msg.role === 'assistant' && (
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg,${t.accent},${t.accent2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, marginRight: 8, flexShrink: 0 }}>💬</div>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg,${t.accent},${t.accent2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, marginRight: 8, flexShrink: 0, marginTop: 2 }}>💬</div>
                     )}
-                    <div style={{ maxWidth: '80%', padding: '11px 16px', borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: msg.role === 'user' ? `linear-gradient(135deg,${t.accent},${t.accent2})` : t.bubble, border: msg.role === 'assistant' ? `1px solid ${t.border}` : 'none', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: t.text }}>
-                      {msg.content}
+                    <div
+                      className={msg.role === 'assistant' ? 'ai-bubble' : ''}
+                      style={{ maxWidth: '80%', padding: '11px 16px', borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: msg.role === 'user' ? `linear-gradient(135deg,${t.accent},${t.accent2})` : t.bubble, border: msg.role === 'assistant' ? `1px solid ${t.border}` : 'none', fontSize: 14, lineHeight: 1.7, color: t.text }}
+                    >
+                      {msg.role === 'assistant' ? (
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   </div>
                 ))}
@@ -259,7 +271,7 @@ export default function Home() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-                  placeholder="Ask anything about your file..."
+                  placeholder={fileContent ? "Ask anything about your file..." : "Ask me anything..."}
                   style={{ flex: 1, padding: '13px 16px', background: t.input, border: `1px solid ${t.border}`, borderRadius: 14, color: t.text, fontSize: 15, outline: 'none', transition: 'all 0.2s' }}
                 />
                 <button
@@ -270,6 +282,25 @@ export default function Home() {
                 >➤</button>
               </div>
             </>
+          )}
+
+          {/* Input box jab upload area show ho raha ho */}
+          {!fileContent && messages.length === 0 && !uploading && (
+            <div style={{ padding: '12px 16px', borderTop: `1px solid ${t.border}`, display: 'flex', gap: 8, flexShrink: 0, background: t.topbar }}>
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+                placeholder="Ask me anything... (or upload a file above)"
+                style={{ flex: 1, padding: '13px 16px', background: t.input, border: `1px solid ${t.border}`, borderRadius: 14, color: t.text, fontSize: 15, outline: 'none', transition: 'all 0.2s' }}
+              />
+              <button
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                className={sendGlow ? 'send-glow' : ''}
+                style={{ padding: '13px 18px', background: !input.trim() ? t.border : `linear-gradient(135deg,${t.accent},${t.accent2})`, border: 'none', borderRadius: 14, color: '#fff', fontSize: 20, cursor: 'pointer', transition: 'all 0.2s', opacity: !input.trim() ? 0.5 : 1 }}
+              >➤</button>
+            </div>
           )}
         </div>
       </div>
