@@ -199,7 +199,7 @@ export default function Home() {
             <button onClick={() => fileInputRef.current?.click()} style={{ padding: '7px 14px', background: `linear-gradient(135deg,${t.accent},${t.accent2})`, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'opacity 0.2s' }}>
               + Upload
             </button>
-            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.md,.json,.xml,.html,.htm,.rtf" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
+            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.md,.json,.xml,.html,.htm,.rtf,.log,.yaml,.yml" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
           </div>
 
           {/* Upload Area */}
